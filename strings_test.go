@@ -65,7 +65,7 @@ func Test_readVaryingString(t *testing.T) {
 	hexStr := TestHeader + "00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex // header:offset(0):actual count:data
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithVaryingString)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), false)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -79,7 +79,7 @@ func Test_readConformantVaryingString(t *testing.T) {
 	hexStr := TestHeader + hex.EncodeToString(ac) + "00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex // header:max:offset(0):actual count:data
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithConformantVaryingString)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), false)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -94,7 +94,7 @@ func Test_readConformantStringUniDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + "04000000" + hex.EncodeToString(ac) + "0000000004000000" + hexStr + "0000" + hexStr + "0000" + hexStr + "0000" + hexStr // header:1st dimension count(4):max for all strings:offset for 1st dim:actual for 1st dim:string array elements(4) with offset and actual counts. Need to include some bytes for alignment.
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithConformantVaryingStringUniArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), false)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -118,7 +118,7 @@ func Test_readConformantStringMultiDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + "02000000" + "03000000" + "02000000" + hex.EncodeToString(ac) + "0000000002000000" + "0000000003000000" + "0000000002000000" + hexStr
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithConformantVaryingStringMultiArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), false)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -145,7 +145,7 @@ func Test_readNonConformantStringUniDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + "0000000004000000" + hexStr + "0000" + hexStr + "0000" + hexStr + "0000" + hexStr // header:offset for 1st dim:actual for 1st dim:string array elements(4) with offset and actual counts. Need to include some bytes for alignment.
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithNonConformantStringUniArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), false)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -169,7 +169,7 @@ func Test_readNonConformantStringMultiDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + "0000000002000000" + "0000000003000000" + "0000000002000000" + hexStr
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithNonConformantStringMultiArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), false)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -196,7 +196,7 @@ func Test_readFixedStringUniDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + hexStr + "0000" + hexStr + "0000" + hexStr + "0000" + hexStr // header:offset for 1st dim:actual for 1st dim:string array elements(4) with offset and actual counts. Need to include some bytes for alignment.
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithFixedStringUniArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), false)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -219,7 +219,7 @@ func Test_readFixedStringMultiDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + hexStr
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithFixedStringMultiArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), false)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)

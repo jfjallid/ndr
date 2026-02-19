@@ -18,7 +18,7 @@ func TestFillPipe(t *testing.T) {
 	hexStr := TestHeader + testPipe
 	b, _ := hex.DecodeString(hexStr)
 	a := new(structWithPipe)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), false)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)

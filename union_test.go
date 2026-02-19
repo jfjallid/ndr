@@ -64,7 +64,7 @@ func Test_readUnionEncapsulated(t *testing.T) {
 		a := new(testUnionEncapsulated)
 		hexStr := TestHeader + test.Hex
 		b, _ := hex.DecodeString(hexStr)
-		dec := NewDecoder(bytes.NewReader(b))
+		dec := NewDecoder(bytes.NewReader(b), false)
 		err := dec.Decode(a)
 		if err != nil {
 			t.Fatalf("test %d: %v", i+1, err)
@@ -91,7 +91,7 @@ func Test_readUnionNonEncapsulated(t *testing.T) {
 		a := new(testUnionNonEncapsulated)
 		hexStr := TestHeader + test.Hex
 		b, _ := hex.DecodeString(hexStr)
-		dec := NewDecoder(bytes.NewReader(b))
+		dec := NewDecoder(bytes.NewReader(b), false)
 		err := dec.Decode(a)
 		if err != nil {
 			t.Fatalf("test %d: %v", i+1, err)

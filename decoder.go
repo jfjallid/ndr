@@ -94,7 +94,7 @@ func (dec *Decoder) process(s interface{}, tag reflect.StructTag) error {
 	}
 	// Read any deferred referents associated with pointers
 	for _, p := range localDef {
-		//fmt.Printf("Processing deferred struct: %+v, ptr: %x\n", p, p.p)
+		//fmt.Printf("#### Processing deferred struct: %+v, ptr: %x ####\n", p, p.p)
 		err = dec.process(p.v, p.tag)
 		if err != nil {
 			return fmt.Errorf("could not decode deferred referent: %v", err)
@@ -106,6 +106,7 @@ func (dec *Decoder) process(s interface{}, tag reflect.StructTag) error {
 // scanConformantArrays scans the structure for embedded conformant fields and captures the maximum element counts for
 // dimensions of the array that are moved to the beginning of the structure.
 func (dec *Decoder) scanConformantArrays(s interface{}, tag reflect.StructTag) error {
+
 	err := dec.conformantScan(s, tag)
 	if err != nil {
 		return fmt.Errorf("failed to scan for embedded conformant arrays: %v", err)
@@ -126,18 +127,21 @@ func (dec *Decoder) conformantScan(s interface{}, tag reflect.StructTag) error {
 	ndrTag := parseTags(tag)
 	if ndrTag.HasValue(TagPointer) {
 		return nil
+	} else if ndrTag.HasValue(TagTopLevelPointer) {
+		//TODO Check if this breaks anything
+		return nil
 	}
 	v := getReflectValue(s)
 
 	switch v.Kind() {
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
+			//fmt.Printf("conformantScan in struct checking field: %d\n", i)
 			// Handle edge case where uninitialized struct (nil ptr) contains a conformant array
 			if v.Field(i).Kind() == reflect.Pointer && v.Field(i).IsNil() {
 				// Handle when struct pointer is nil
 				v.Field(i).Set(reflect.New(v.Field(i).Type().Elem()))
 			}
-
 			err := dec.conformantScan(v.Field(i), v.Type().Field(i).Tag)
 			if err != nil {
 				return err
