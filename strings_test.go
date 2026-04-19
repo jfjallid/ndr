@@ -59,13 +59,114 @@ func Test_uint16SliceToString(t *testing.T) {
 	assert.Equal(t, TestStr, s, "uint16SliceToString did not return as expected")
 }
 
+func Test_encodeVaryingString(t *testing.T) {
+	s := TestStructWithVaryingString{A: TestStr}
+	enc := NewEncoder(bytes.NewBuffer([]byte{}), false)
+	b, err := enc.Encode(&s)
+	if err != nil {
+		t.Fatalf("encode error: %v", err)
+	}
+
+	// Expected: offset(0) + actualCount + UTF-16LE data (with null terminator) + alignment padding
+	// NDR adds null terminator since it's a string without skipnull
+	// TestStrUTF16Hex already includes null terminator (13 uint16s = 26 bytes)
+	// 26 bytes % 4 = 2, so 2 padding bytes for 4-byte alignment
+	sWithNull := TestStr + "\x00"
+	ac := make([]byte, 4, 4)
+	binary.LittleEndian.PutUint32(ac, uint32(len(sWithNull)))
+	expected, _ := hex.DecodeString("00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex + "0000")
+	assert.Equal(t, expected, b, "Encoded varying string bytes not as expected")
+}
+
+func Test_roundTripVaryingString(t *testing.T) {
+	original := TestStructWithVaryingString{A: TestStr}
+	enc := NewEncoder(bytes.NewBuffer([]byte{}), false)
+	b, err := enc.Encode(&original)
+	if err != nil {
+		t.Fatalf("encode error: %v", err)
+	}
+
+	decoded := new(TestStructWithVaryingString)
+	dec := NewDecoder(bytes.NewReader(b), false)
+	err = dec.Decode(decoded)
+	if err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	assert.Equal(t, original.A, decoded.A, "Round-trip varying string mismatch")
+}
+
+func Test_roundTripConformantVaryingString(t *testing.T) {
+	original := TestStructWithConformantVaryingString{A: TestStr}
+	enc := NewEncoder(bytes.NewBuffer([]byte{}), false)
+	b, err := enc.Encode(&original)
+	if err != nil {
+		t.Fatalf("encode error: %v", err)
+	}
+
+	decoded := new(TestStructWithConformantVaryingString)
+	dec := NewDecoder(bytes.NewReader(b), false)
+	err = dec.Decode(decoded)
+	if err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	assert.Equal(t, original.A, decoded.A, "Round-trip conformant varying string mismatch")
+}
+
+func Test_roundTripConformantStringUniDimensionalArray(t *testing.T) {
+	original := TestStructWithConformantVaryingStringUniArray{A: []string{TestStr, TestStr, TestStr, TestStr}}
+	enc := NewEncoder(bytes.NewBuffer([]byte{}), false)
+	b, err := enc.Encode(&original)
+	if err != nil {
+		t.Fatalf("encode error: %v", err)
+	}
+	decoded := new(TestStructWithConformantVaryingStringUniArray)
+	dec := NewDecoder(bytes.NewReader(b), false)
+	err = dec.Decode(decoded)
+	if err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	assert.Equal(t, original.A, decoded.A, "round-trip conformant string array mismatch")
+}
+
+func Test_roundTripNonConformantStringUniDimensionalArray(t *testing.T) {
+	original := TestStructWithNonConformantStringUniArray{A: []string{TestStr, TestStr, TestStr, TestStr}}
+	enc := NewEncoder(bytes.NewBuffer([]byte{}), false)
+	b, err := enc.Encode(&original)
+	if err != nil {
+		t.Fatalf("encode error: %v", err)
+	}
+	decoded := new(TestStructWithNonConformantStringUniArray)
+	dec := NewDecoder(bytes.NewReader(b), false)
+	err = dec.Decode(decoded)
+	if err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	assert.Equal(t, original.A, decoded.A, "round-trip non-conformant string array mismatch")
+}
+
+func Test_roundTripFixedStringUniDimensionalArray(t *testing.T) {
+	original := TestStructWithFixedStringUniArray{A: [4]string{TestStr, TestStr, TestStr, TestStr}}
+	enc := NewEncoder(bytes.NewBuffer([]byte{}), false)
+	b, err := enc.Encode(&original)
+	if err != nil {
+		t.Fatalf("encode error: %v", err)
+	}
+	decoded := new(TestStructWithFixedStringUniArray)
+	dec := NewDecoder(bytes.NewReader(b), false)
+	err = dec.Decode(decoded)
+	if err != nil {
+		t.Fatalf("decode error: %v", err)
+	}
+	assert.Equal(t, original.A, decoded.A, "round-trip fixed string array mismatch")
+}
+
 func Test_readVaryingString(t *testing.T) {
 	ac := make([]byte, 4, 4)
 	binary.LittleEndian.PutUint32(ac, uint32(len(TestStrUTF16Hex)/4))            // actual count of number of uint16 bytes
 	hexStr := TestHeader + "00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex // header:offset(0):actual count:data
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithVaryingString)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), true)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -79,7 +180,7 @@ func Test_readConformantVaryingString(t *testing.T) {
 	hexStr := TestHeader + hex.EncodeToString(ac) + "00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex // header:max:offset(0):actual count:data
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithConformantVaryingString)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), true)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -94,7 +195,7 @@ func Test_readConformantStringUniDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + "04000000" + hex.EncodeToString(ac) + "0000000004000000" + hexStr + "0000" + hexStr + "0000" + hexStr + "0000" + hexStr // header:1st dimension count(4):max for all strings:offset for 1st dim:actual for 1st dim:string array elements(4) with offset and actual counts. Need to include some bytes for alignment.
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithConformantVaryingStringUniArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), true)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -118,7 +219,7 @@ func Test_readConformantStringMultiDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + "02000000" + "03000000" + "02000000" + hex.EncodeToString(ac) + "0000000002000000" + "0000000003000000" + "0000000002000000" + hexStr
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithConformantVaryingStringMultiArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), true)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -145,7 +246,7 @@ func Test_readNonConformantStringUniDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + "0000000004000000" + hexStr + "0000" + hexStr + "0000" + hexStr + "0000" + hexStr // header:offset for 1st dim:actual for 1st dim:string array elements(4) with offset and actual counts. Need to include some bytes for alignment.
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithNonConformantStringUniArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), true)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -169,7 +270,7 @@ func Test_readNonConformantStringMultiDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + "0000000002000000" + "0000000003000000" + "0000000002000000" + hexStr
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithNonConformantStringMultiArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), true)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -196,7 +297,7 @@ func Test_readFixedStringUniDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + hexStr + "0000" + hexStr + "0000" + hexStr + "0000" + hexStr // header:offset for 1st dim:actual for 1st dim:string array elements(4) with offset and actual counts. Need to include some bytes for alignment.
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithFixedStringUniArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), true)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -219,7 +320,7 @@ func Test_readFixedStringMultiDimensionalArray(t *testing.T) {
 	hexStr = TestHeader + hexStr
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithFixedStringMultiArray)
-	dec := NewDecoder(bytes.NewReader(b))
+	dec := NewDecoder(bytes.NewReader(b), true)
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
