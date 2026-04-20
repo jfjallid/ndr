@@ -690,30 +690,3 @@ func (enc *Encoder) writeMultiDimensionalConformantVaryingArray(v reflect.Value,
 	}
 	return nil
 }
-
-// writeUniDimensionalConformantVaryingArray writes the uni-dimensional slice value.
-//func (enc *Encoder) writeUniDimensionalConformantVaryingArray(v reflect.Value, tag reflect.StructTag, def *[]deferedPtr) error {
-//	o, err := enc.readUint32()
-//	if err != nil {
-//		return fmt.Errorf("could not read offset of uni-dimensional conformant varying array: %v", err)
-//	}
-//	s, err := enc.readUint32()
-//	if err != nil {
-//		return fmt.Errorf("could not establish actual count of uni-dimensional conformant varying array: %v", err)
-//	}
-//	if m < o+s {
-//		return errors.New("max count is less than the offset plus actual count")
-//	}
-//	t := v.Type()
-//	n := int(s)
-//	a := reflect.MakeSlice(t, n, n)
-//	for i := int(o); i < n; i++ {
-//		err := enc.write(a.Index(i), tag, def)
-//		if err != nil {
-//			return fmt.Errorf("could not write index %d of uni-dimensional conformant varying array: %v", i, err)
-//		}
-//	}
-//	v.Set(a)
-//	return nil
-//}
-

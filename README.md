@@ -2,9 +2,8 @@
 This project is a fork and extension of [jcmturner/rpc/v2/ndr](https://github.com/jcmturner/rpc)
 which is an NDR decoder trying to follow the specification of
 [DCE 1.1:Remote Procedure Call - Transfer Syntax NDR](https://pubs.opengroup.org/onlinepubs/9629399/chap14.htm).
-My addition to the fork is a partial implementation of an NDR encoder which is
-very much a work in progress and far from complete. I have also extended the decoder to
-better support top-level pointers.
+My addition to the fork is an extension of the decoder to support more of the NDR specification,
+and an implementation of an NDR encoder which is is a work in progress.
 
 ## Structs from IDL
 [Interface Definition Language (IDL)](http://pubs.opengroup.org/onlinepubs/9629399/chap4.htm)
