@@ -67,14 +67,14 @@ func Test_encodeVaryingString(t *testing.T) {
 		t.Fatalf("encode error: %v", err)
 	}
 
-	// Expected: offset(0) + actualCount + UTF-16LE data (with null terminator) + alignment padding
-	// NDR adds null terminator since it's a string without skipnull
-	// TestStrUTF16Hex already includes null terminator (13 uint16s = 26 bytes)
-	// 26 bytes % 4 = 2, so 2 padding bytes for 4-byte alignment
+	// Expected: offset(0) + actualCount + UTF-16LE data (with null terminator).
+	// NDR adds the null terminator since this is a string without skipnull.
+	// No trailing padding is emitted: C706 aligns each primitive as it is
+	// written, so any gap belongs to whatever field comes next.
 	sWithNull := TestStr + "\x00"
 	ac := make([]byte, 4, 4)
 	binary.LittleEndian.PutUint32(ac, uint32(len(sWithNull)))
-	expected, _ := hex.DecodeString("00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex + "0000")
+	expected, _ := hex.DecodeString("00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex)
 	assert.Equal(t, expected, b, "Encoded varying string bytes not as expected")
 }
 

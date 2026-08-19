@@ -34,7 +34,7 @@ func TestMakeSubSlices(t *testing.T) {
 }
 
 func TestDimensionCountFromTag(t *testing.T) {
-	var a StructWithMultiDimensionalConformantSlice
+	var a structWithTagKey
 	v := reflect.ValueOf(a)
 	d, err := intFromTag(v.Type().Field(0).Tag, "test")
 	if err != nil {
@@ -64,6 +64,13 @@ type StructWithConformantVaryingSlice struct {
 }
 
 type StructWithMultiDimensionalConformantSlice struct {
+	A [][][]uint32 `ndr:"conformant"`
+}
+
+// structWithTagKey carries a key:value tag purely so intFromTag can be
+// exercised; it is never encoded or decoded, so the key need not be one the
+// library recognises.
+type structWithTagKey struct {
 	A [][][]uint32 `ndr:"conformant,test:3"`
 }
 

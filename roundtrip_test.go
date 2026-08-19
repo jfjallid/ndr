@@ -597,9 +597,9 @@ func TestRoundTripMultipleRPCUnicodeStrings(t *testing.T) {
 
 // Pattern: union with pointer fields (like SAMPR_USER_INFO_BUFFER)
 type testUnionWithPointerFields struct {
-	Tag    uint32                 `ndr:"unionTag"`
-	Info1  testConformantArrayStruct `ndr:"unionField"`
-	Info2  testPrimitives          `ndr:"unionField"`
+	Tag   uint32                    `ndr:"unionTag"`
+	Info1 testConformantArrayStruct `ndr:"unionField,pointer"`
+	Info2 testPrimitives            `ndr:"unionField"`
 }
 
 func (u testUnionWithPointerFields) SwitchFunc(tag interface{}) string {
@@ -769,7 +769,7 @@ func TestRoundTripLittleEndian(t *testing.T) {
 // Pattern: struct with a mix of top-level pointers and conformant arrays
 // Simulates a request with multiple RPC arguments
 type testRPCRequest struct {
-	SystemName string   `ndr:"toplevel,fullpointer,conformant,varying"`
+	SystemName string `ndr:"toplevel,fullpointer,conformant,varying"`
 	Level      uint32
 	Items      []uint32 `ndr:"toplevel,conformant"`
 }
